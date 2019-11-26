@@ -6,9 +6,29 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{AA724DA7-F251-4EAA-B72D-BE8F6C50A022}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
+		LICENSE = LICENSE
+		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CSharpLibrary", "CSharpLibrary\CSharpLibrary.csproj", "{60D1AD19-DC45-40C6-9626-0D7B25382E3B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CSharpTests", "CSharpTests\CSharpTests.csproj", "{1C8D04B8-6620-44C1-9FA0-E9E49F4DCFB9}"
+EndProject
 Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{60D1AD19-DC45-40C6-9626-0D7B25382E3B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{60D1AD19-DC45-40C6-9626-0D7B25382E3B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{60D1AD19-DC45-40C6-9626-0D7B25382E3B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{60D1AD19-DC45-40C6-9626-0D7B25382E3B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1C8D04B8-6620-44C1-9FA0-E9E49F4DCFB9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1C8D04B8-6620-44C1-9FA0-E9E49F4DCFB9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1C8D04B8-6620-44C1-9FA0-E9E49F4DCFB9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1C8D04B8-6620-44C1-9FA0-E9E49F4DCFB9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
