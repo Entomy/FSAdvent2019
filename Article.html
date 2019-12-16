@@ -20,7 +20,7 @@
 				<p>I've written this mostly in hopes that library authors use this information to provide better F# support when possible, and to help the community to provide better F# support when not.</p>
 			</aside>
 			<h2>Example Library</h2>
-			<p>For the sake of this article I've written every F# programmers worst nightmare: The most extremely imperative and procedural and impure library I could come up with. Fortunately it's simple. A single specialized stack type for <a href="https://docs.microsoft.com/en-us/dotnet/api/system.double">Double</a>.</p>
+			<p>For the sake of this article I've written every F# programmers worst nightmare: The most extremely imperative and procedural and impure library I could come up with. And you don't have a choice in using something else because your manager is an idiot or something. The library is simple: a single specialized stack type for <a href="https://docs.microsoft.com/en-us/dotnet/api/system.double">Double</a>.</p>
 			<p>Normally people assume that if they mark the assembly <a href="https://docs.microsoft.com/en-us/dotnet/api/system.clscompliantattribute">CLSCompliant</a> then everything is great and every language can consume the API. This is half true. Everything <em>can</em> consume the API. I'm pretty sure everything can also eat dirt, but that doesn't mean you or I want to. I marked the example library <a href="https://docs.microsoft.com/en-us/dotnet/api/system.clscompliantattribute">CLSCompliant</a>, but it's bad. I died inside writing it.</p>
 			<p>Let's have a look at the API.</p>
 <pre>
@@ -82,9 +82,6 @@
 </pre>
 			<h2>Functional Object Initializer</h2>
 			<p>This is a <em>deep</em> one, because while it's not that big of an issue, it's not easy to solve. You can still deal with things though. See, that <code>DoubleStack()</code> at the beginning of the pipeline when declaring is a bit annoying. Not the end of the world, but we can do better.</p>
-			<aside>
-				<p>I'm also going to take this opportunity to flip the stack pipeline operator direction, since we will be able to now. This is important for fitting in better with the function pipeline.</p>
-			</aside>
 <pre>
 <code>type Pipeline =</code>
 <code>	static member Pipe(left:DoubleStack, right:float) =</code>
@@ -112,6 +109,10 @@
 <code>Assert.Equal(15.0, peek stack)</code>
 </pre>
 			<p>Not a whole lot has changed, but it certainly looks cleaner. Try out longer pipelines, it still works.</p>
+			<aside>
+				<p>There is another, <a href="http://www.fssnip.net/7Xj">simpler way</a>, to accomplish this. Use it when you can, but from my experience it's not possible in many situations, while this approach is.</p>
+				<p>I've found this is most useful when mapping overridden methods to functions so that currying and pipelining is possible. So this often means rearranging parameters. You may find other uses. I don't recommend doing this just because you can.</p>
+			</aside>
 			<h2>Functional Stack Arithmetic</h2>
 			<p>The last remaining thing is those pesky arithmetic methods. Surely by now we've finally run into something we can't fully bind to this functional, pipeline heavy, environment. Right?</p>
 			<p>Actually this one is really easy, with what we've already set up</p>
@@ -120,7 +121,7 @@
 <code>	stack.Add()</code>
 <code>	stack</code>
 </pre>
-			<p>And so on. That's it. No seriously, that's it. Because of the stack pipeline operators exact symbols (<code>|=></code>) not only does it render like a pipe arrow thing when using <a href="https://github.com/tonsky/FiraCode">Fira Code</a> or related fonts, but it also has the exact same precedence and associativity as the function pipeline operator, so there's nothing new to add.</p>
+			<p>And so on. That's it. No seriously, that's it. Because of the stack pipeline operators exact symbol (<code>|=></code>) not only does it render like a pipe arrow thing when using <a href="https://github.com/tonsky/FiraCode">Fira Code</a> or related fonts, but it also has the exact same precedence and associativity as the function pipeline operator, so there's nothing new to add.</p>
 			<p>Putting everything together we have:</p>
 <pre>
 <code>let stack = 3.0 |=> 5.0 |> mul |=> 8.0 |> sub</code>
