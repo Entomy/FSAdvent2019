@@ -7,11 +7,12 @@
 		<link rel="stylesheet" href="stylesheet.css" />
 		<link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
 		<link rel="icon" href="favicon.ico" type="image/x-icon">
+		<script src="microlight.js"></script>
 	</head>
 	<body>
 		<article>
 			<h1 class="title">Advanced F# Interop</h1>
-			<p>You like F#. I like F#. I also like C# and even when I have control over both ecosystems, getting the two to play nice with each other isn't the easiest of things. Even worse is when you <em>need</em> to use code written by someone that... oh my god, where did they learn to program? Look, we've all been there. Some API's just feel aweful, especially when consuming in F#.</p>
+			<p>You like F#. I like F#. I also like C# and even when I have control over both ecosystems, getting the two to play nice with each other isn't the easiest of things. Even worse is when you <em>need</em> to use code written by someone that... oh my god, where did they learn to program? Look, we've all been there. Some API's just feel awful, especially when consuming in F#.</p>
 			<p>So how do you deal with it? For many people they write their own replacement in F#.</p>
 			<img alt="Meme: Stop right there criminal scum" src="" />
 			<p>There's a better way. And it doesn't actually require that much work.</p>
@@ -19,134 +20,112 @@
 				<p>I've written this mostly in hopes that library authors use this information to provide better F# support when possible, and to help the community to provide better F# support when not.</p>
 			</aside>
 			<h2>Example Library</h2>
-			<p>For the sake of this article I've written every F# programmers worst nightmare: The most extremely imperative and procedural and impure library I could come up with. Fortunantly it's simple. A single specialized stack type for <a href="https://docs.microsoft.com/en-us/dotnet/api/system.double">Double</a>.</p>
+			<p>For the sake of this article I've written every F# programmers worst nightmare: The most extremely imperative and procedural and impure library I could come up with. Fortunately it's simple. A single specialized stack type for <a href="https://docs.microsoft.com/en-us/dotnet/api/system.double">Double</a>.</p>
 			<p>Normally people assume that if they mark the assembly <a href="https://docs.microsoft.com/en-us/dotnet/api/system.clscompliantattribute">CLSCompliant</a> then everything is great and every language can consume the API. This is half true. Everything <em>can</em> consume the API. I'm pretty sure everything can also eat dirt, but that doesn't mean you or I want to. I marked the example library <a href="https://docs.microsoft.com/en-us/dotnet/api/system.clscompliantattribute">CLSCompliant</a>, but it's bad. I died inside writing it.</p>
 			<p>Let's have a look at the API.</p>
-			<code>
 <pre>
-void Add();
-void Add(out Double result);
-void Subtract();
-void Subtract(out Double result);
-void Multiply();
-void Multiply(out Double result);
-void Divide();
-void Divide(out Double result);
-//... As well as everything Stack&lt;Double&gt; would already have
+<code>void Add();</code>
+<code>void Add(out Double result);</code>
+<code>void Subtract();</code>
+<code>void Subtract(out Double result);</code>
+<code>void Multiply();</code>
+<code>void Multiply(out Double result);</code>
+<code>void Divide();</code>
+<code>void Divide(out Double result);</code>
+<code>//... As well as everything Stack&lt;Double&gt; would already have</code>
 </pre>
-			</code>
 			<p>Let's have a look at just how bad this is, using the stack API for the arithmetic 3 * 5 - 8.</p>
-			<code>
 <pre>
-let stack = DoubleStack()
-stack.Push(3.0)
-stack.Push(5.0)
-stack.Multiply()
-stack.Push(8.0)
-stack.Subtract()
+<code>let stack = DoubleStack()</code>
+<code>stack.Push(3.0)</code>
+<code>stack.Push(5.0)</code>
+<code>stack.Multiply()</code>
+<code>stack.Push(8.0)</code>
+<code>stack.Subtract()</code>
 </pre>
-			</code>
 			<p>So, that's not great. It works, and it's identical across languages. But man that's not the kind of API we want to be working with in F#. But what about those other methods, the ones with the <code>out</code> parameters?</p>
-			<code>
 <pre>
-let stack = DoubleStack()
-let mutable result = ref 0.0
-stack.Push(3.0)
-stack.Push(5.0)
-stack.Multiply(result)
+<code>let stack = DoubleStack()</code>
+<code>let mutable result = ref 0.0</code>
+<code>stack.Push(3.0)</code>
+<code>stack.Push(5.0)</code>
+<code>stack.Multiply(result)</code>
 </pre>
-			</code>
 			<p>You see why I say I died inside. Surely there's no hope here. Surely this is so far-gone that you either suck it up and use it as is, or write your own with a F# friendly API.</p>
 			<img alt="Meme: Trump saying wrong" src="" />
 			<p>Over the course of this article I'll show you how to turn this into a very function feeling API you'd be certain was written natively in F#.</p>
 			<h2>Functional Push/Pop/Peek</h2>
 			<p>I think a good starting point is to make <code>Push()</code>, <code>Pop()</code>, and <code>Peek()</code> feel functional, by implementing our own <em>stack pipeline</em>.</p>
-			<code>
 <pre>
-let ( |=&gt; )(stack:DoubleStack)(value) = stack.Push(value)
-let stack = DoubleStack() |=&gt; 5.0
+<code>let ( |=&gt; )(stack:DoubleStack)(value) = stack.Push(value)</code>
+<code>let stack = DoubleStack() |=&gt; 5.0</code>
 </pre>
-			</code>
 			<p>And just like that we have a working pipeline! Right? No. We do have a working single operation, but this leaves us with the same situation, in a different coat of paint. Try actually chaining the pipeline and you'll see the issue. We need to return the stack in the function call.</p>
-			<code>
 <pre>
-let ( |=&gt; )(stack:DoubleStack)(value) =
-	stack.Push(value)
-	stack
-let stack = DoubleStack() |=&gt; 5.0 |=&gt; 3.0
-stack.Multiply()
-Assert.Equal(15.0, stack.Peek())
+<code>let ( |=&gt; )(stack:DoubleStack)(value) =</code>
+<code>	stack.Push(value)</code>
+<code>	stack</code>
+<code>let stack = DoubleStack() |=&gt; 5.0 |=&gt; 3.0</code>
+<code>stack.Multiply()</code>
+<code>Assert.Equal(15.0, stack.Peek())</code>
 </pre>
-			</code>
 			<p>That's already looking a good amount better. Still a ways to go though. Let's take care of the other two methods we mentioned</p>
-			<code>
 <pre>
-let inline pop (stack:DoubleStack) = stack.Pop()
-let inline peek (stack:DoubleStack) = stack.Peek()
+<code>let inline pop (stack:DoubleStack) = stack.Pop()</code>
+<code>let inline peek (stack:DoubleStack) = stack.Peek()</code>
 </pre>
-			</code>
 			<p>This are very straightforward translations. So straightforward that they are inlined. These kind of methods are the easiest to bind, and are something you should already be familiar with. With all these combined, we're now left with something that's starting to look functional, but is still obviously not there yet.</p>
-			<code>
 <pre>
-let stack = DoubleStack() |=&gt; 5.0 |=&gt; 3.0
-stack.Multiply()
-Assert.Equal(15.0, peek stack)
+<code>let stack = DoubleStack() |=&gt; 5.0 |=&gt; 3.0</code>
+<code>stack.Multiply()</code>
+<code>Assert.Equal(15.0, peek stack)</code>
 </pre>
-			</code>
 			<h2>Functional Object Initializer</h2>
-			<p>This is a <em>deep</em> one, because while it's not that big of an issue, it's not easy to solve. You can still deal with things though. See, that <code>DoubleStack()</code> at the begining of the pipeline when declaring is a bit annoying. Not the end of the world, but we can do better.</p>
+			<p>This is a <em>deep</em> one, because while it's not that big of an issue, it's not easy to solve. You can still deal with things though. See, that <code>DoubleStack()</code> at the beginning of the pipeline when declaring is a bit annoying. Not the end of the world, but we can do better.</p>
 			<aside>
 				<p>I'm also going to take this opportunity to flip the stack pipeline operator direction, since we will be able to now. This is important for fitting in better with the function pipeline.</p>
 			</aside>
-			<code>
 <pre>
-type Pipeline =
-	static member Pipe(left:DoubleStack, right:float) =
-		left.Push(right)
-		left
-	static member Pipe(left:float, right:float) =
-		let result = DoubleStack()
-		result.Push(left)
-		result.Push(right)
-		result
-
-let inline private pipe&lt; ^t, ^a when (^t or ^a) : (static member Pipe : ^a * float -> DoubleStack)&gt; left right =
-	((^t or ^a) : (static member Pipe : ^a * float -> DoubleStack)(left, right))
-
-let inline ( |=&gt; )(left:^a)(right:float) = pipe&lt;Pipeline, ^a> left right
+<code>type Pipeline =</code>
+<code>	static member Pipe(left:DoubleStack, right:float) =</code>
+<code>		left.Push(right)</code>
+<code>		left</code>
+<code>	static member Pipe(left:float, right:float) =</code>
+<code>		let result = DoubleStack()</code>
+<code>		result.Push(left)</code>
+<code>		result.Push(right)</code>
+<code>		result</code>
+<code></code>
+<code>let inline private pipe&lt; ^t, ^a when (^t or ^a) : (static member Pipe : ^a * float -> DoubleStack)&gt; left right =</code>
+<code>	((^t or ^a) : (static member Pipe : ^a * float -> DoubleStack)(left, right))</code>
+<code></code>
+<code>let inline ( |=&gt; )(left:^a)(right:float) = pipe&lt;Pipeline, ^a> left right</code>
 </pre>
-			</code>
 			<p>What in the heck is this? I promise this isn't some fancy black magic. Let's go over it one thing at a time.</p>
 			<p>First is the Pipeline type we defined. This <em>must</em> has the same visibility as the function or operator which will be using it. In it we're defining overloads of <code>Pipe()</code> which is static. You can define whatever you want here; these are the actual methods that are being called. The first one does what we already defined: it takes a stack and a float, pushes the float onto the stack, and returns the stack. The second one adds the behavior we wanted: it creates a stack, pushes the left value onto it, then pushes the right value onto it, then returns the stack.</p>
 			<p>Second is some inline and generic trickery which is probably the most intimidating thing to those not familiar with F#'s type system. It's not that bad, I promise. Ignoring the generic part, we have a function called pipe with two curried parameters: left and right. Not so bad. The generic part says that we're considering two statically resolved types: <code>^t</code> and <code>^a</code>. That static resolution is important, and because of that, this function absolutely must be inlined. It doesn't need to be visible however, so I've taken to making it private, always. The rest of the generic says that on <code>^t</code> or <code>^a</code>, there will be a static member <code>Pipe</code> with the signature <code>^a * float -> DoubleStack</code>. Look at those methods we were just talking about. As long as <code>^a</code> matches one of their first parameters, we have a matching method. The seemingly repeating code in the definition part of this function just says to call whatever method this resolves to, with the tupled arguments <code>(left, right)</code>. There, that wasn't too bad. I'll admit even I still kinda think it's black magic though.</p>
-			<p>The third part is just a slight modification to our original stack pipeline operator. This also needs to be inlined now. Inlining both of these functions is extremely important. Similarly, we can change the lefthand parameter to be of <code>^a</code>, so that it statically resolves. Then we call the black magic function instead of what we were doing. This is where <code>^t</code> and <code>Pipeline</code> comes into play. Assuming the library we're working with is third party, we can't add an instance member called Pipe to it. And we definately can't add an instance member to <code>Double</code>! This additional parameter is for a type we've defined that will also have these methods, which is why it was declared as <code>static member</code> in the generic. Now it knows to look inside of our own type as well.</p>
+			<p>The third part is just a slight modification to our original stack pipeline operator. This also needs to be inlined now. Inlining both of these functions is extremely important. Similarly, we can change the lefthand parameter to be of <code>^a</code>, so that it statically resolves. Then we call the black magic function instead of what we were doing. This is where <code>^t</code> and <code>Pipeline</code> comes into play. Assuming the library we're working with is third party, we can't add an instance member called Pipe to it. And we definitely can't add an instance member to <code>Double</code>! This additional parameter is for a type we've defined that will also have these methods, which is why it was declared as <code>static member</code> in the generic. Now it knows to look inside of our own type as well.</p>
 			<p>How much progress did this make?</p>
-			<code>
 <pre>
-let stack = 5.0 |=&gt; 3.0
-stack.Multiply()
-Assert.Equal(15.0, peek stack)
+<code>let stack = 5.0 |=&gt; 3.0</code>
+<code>stack.Multiply()</code>
+<code>Assert.Equal(15.0, peek stack)</code>
 </pre>
-			</code>
 			<p>Not a whole lot has changed, but it certainly looks cleaner. Try out longer pipelines, it still works.</p>
 			<h2>Functional Stack Arithmetic</h2>
 			<p>The last remaining thing is those pesky arithmetic methods. Surely by now we've finally run into something we can't fully bind to this functional, pipeline heavy, environment. Right?</p>
 			<p>Actually this one is really easy, with what we've already set up</p>
-			<code>
 <pre>
-let add (stack:DoubleStack) =
-	stack.Add()
-	stack
+<code>let add (stack:DoubleStack) =</code>
+<code>	stack.Add()</code>
+<code>	stack</code>
 </pre>
-			</code>
 			<p>And so on. That's it. No seriously, that's it. Because of the stack pipeline operators exact symbols (<code>|=></code>) not only does it render like a pipe arrow thing when using <a href="https://github.com/tonsky/FiraCode">Fira Code</a> or related fonts, but it also has the exact same precedence and associativity as the function pipeline operator, so there's nothing new to add.</p>
-			<p>Putting everythign together we have:</p>
-			<code>
+			<p>Putting everything together we have:</p>
 <pre>
-let stack = 3.0 |=> 5.0 |> mul |=> 8.0 |> sub
-Assert.Equal(7.0, peek stack)
+<code>let stack = 3.0 |=> 5.0 |> mul |=> 8.0 |> sub</code>
+<code>Assert.Equal(7.0, peek stack)</code>
 </pre>
-			</code>
 			<p>I told you it was possible. 😉</p>
 			<p>There's a lot more, but this article has covered a lot and I don't want to provide an overwhelming amount of information. So expect more in the future.</p>
 		</article>
